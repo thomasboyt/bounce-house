@@ -1,0 +1,33 @@
+{
+  "name": "bounce-house",
+  "private": true,
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "dev": "webpack-serve webpack/webpack.dev.js",
+    "build": "webpack --config webpack/webpack.production.js",
+    "deploy": "LOBBY_SERVER=groovejet.disco.zone npm run build && cp static/** dist && disco-deploy dist/ bounce-house",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Thomas Boyt <me@thomasboyt.com>",
+  "license": "MIT",
+  "devDependencies": {
+    "css-loader": "^1.0.0",
+    "file-loader": "^1.1.11",
+    "style-loader": "^0.22.0",
+    "ts-loader": "^4.4.2",
+    "typescript": "^2.9.2",
+    "url-loader": "^1.0.1",
+    "webpack": "^4.16.5",
+    "webpack-serve": "^2.0.2"
+  },
+  "dependencies": {
+    "@types/query-string": "^6.1.0",
+    "pearl": "0.0.11",
+    "pearl-networking": "0.0.11",
+    "query-string": "^6.1.0",
+    "webpack-cli": "^3.1.0",
+    "webpack-merge": "^4.1.2"
+  }
+}
