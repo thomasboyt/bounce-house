@@ -14,7 +14,7 @@ import {
 } from 'pearl-networking';
 
 import Player from './Player';
-import { Tag, ZIndex } from '../types';
+import { Tag, ZIndex, RGB } from '../types';
 import showRoomCode from '../showRoomCode';
 
 interface Opts {
@@ -23,6 +23,13 @@ interface Opts {
 }
 
 const groovejetUrl = process.env.LOBBY_SERVER || 'localhost:3000';
+
+const colors: RGB[] = [
+  [0, 183, 235],
+  [255, 0, 144],
+  [255, 255, 0],
+  [255, 255, 255],
+];
 
 export default class Game extends Component<Opts> {
   isHost!: boolean;
@@ -45,10 +52,15 @@ export default class Game extends Component<Opts> {
 
     showRoomCode(roomCode);
 
+    let nextColorIdx = 0;
     host.onPlayerAdded.add(({ networkingPlayer }) => {
+      const color = colors[nextColorIdx % (colors.length - 1)];
+      nextColorIdx += 1;
+
       const id = networkingPlayer.id;
       const player = host.createNetworkedPrefab('player');
       player.getComponent(Player).id = id;
+      player.getComponent(Player).color = color;
 
       player.getComponent(Physical).center = {
         x: 10,

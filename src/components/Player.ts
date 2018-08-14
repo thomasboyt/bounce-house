@@ -6,19 +6,33 @@ import {
   KinematicBody,
   Vector2,
   VectorMaths as V,
+  CollisionInformation,
+  BoxRenderer,
 } from 'pearl';
 import { NetworkedEntity, NetworkingHost } from 'pearl-networking';
+import TrailRenderer from './TrailRenderer';
+import { RGB } from '../types';
 
+// TODO: what to do with all these constants?
 const bounceImpulse = 4;
 const topSpeed = 1.5;
 const playerAccel = 0.02;
 const friction = 0.005;
+const gravity = 0.005;
+
+interface Snapshot {
+  color: RGB;
+}
 
 export default class Player extends Component<void> {
   id?: number;
-  speed = 0.1;
-  gravity = 0.005;
   vel: Vector2 = { x: 0, y: 0 };
+  color!: RGB;
+
+  init() {
+    this.getComponent(TrailRenderer).trailColor = this.color;
+    this.getComponent(BoxRenderer).fillStyle = `rgb(${this.color.join(',')})`;
+  }
 
   update(dt: number) {
     if (!this.getComponent(NetworkedEntity).isHost) {
@@ -51,7 +65,7 @@ export default class Player extends Component<void> {
 
     this.vel = {
       x: this.vel.x + xDirection * playerAccel * dt,
-      y: this.vel.y + this.gravity * dt,
+      y: this.vel.y + gravity * dt,
     };
 
     if (this.vel.x > 0) {
@@ -69,25 +83,39 @@ export default class Player extends Component<void> {
     }
 
     const collisions = this.getComponent(KinematicBody).moveAndSlide(this.vel);
+    const solidCollisions = collisions.filter(
+      (collision) => !collision.collider.isTrigger
+    );
+    // we only will try to handle the first collision; managing multiple is
+    // kinda undefined territory (which do you bounce off, etc...)
+    const collision = solidCollisions[0];
 
-    if (collisions.length) {
-      for (let collision of collisions) {
-        if (collision.collider.isTrigger) {
-          continue;
-        }
-
-        const { x, y } = collision.response.overlapVector;
-
-        if (this.vel.y > 0 && y > 0) {
-          // we hit ground, so bounce
-          const overlap = collision.response.overlapVector;
-          const normal = V.multiply(overlap, -1);
-          this.vel = V.multiply(V.unit(normal), bounceImpulse);
-        } else if (this.vel.y < 0 && y < 0) {
-          // bumping into ceiling
-          this.vel = { x: this.vel.x, y: 0 };
-        }
-      }
+    if (collision) {
+      this.respondToCollision(collision);
     }
+  }
+
+  private respondToCollision(collision: CollisionInformation) {
+    const { x, y } = collision.response.overlapVector;
+
+    if (this.vel.y > 0 && y > 0) {
+      // we hit ground, so bounce
+      const overlap = collision.response.overlapVector;
+      const normal = V.multiply(overlap, -1);
+      this.vel = V.multiply(V.unit(normal), bounceImpulse);
+    } else if (this.vel.y < 0 && y < 0) {
+      // bumping into ceiling
+      this.vel = { x: this.vel.x, y: 0 };
+    }
+  }
+
+  serialize(): Snapshot {
+    return {
+      color: this.color,
+    };
+  }
+
+  deserialize(snapshot: Snapshot) {
+    this.color = snapshot.color;
   }
 }
