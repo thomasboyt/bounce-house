@@ -3,19 +3,30 @@ import { NetworkingHost, NetworkingClient } from 'pearl-networking';
 import Game from './components/Game';
 import networkedPrefabs from './networkedPrefabs';
 
-interface Opts {
-  isHost: boolean;
-  roomCode?: string;
-}
+const parseIntParam = (param: string | null) => {
+  if (!param) {
+    return undefined;
+  }
+  const val = parseInt(param);
+  if (Number.isNaN(val)) {
+    return undefined;
+  }
 
-async function createGame(opts: Opts) {
-  const { isHost, roomCode } = opts;
+  return val;
+};
+
+async function createGame() {
+  const params = new URLSearchParams(document.location.search.slice(1));
+  const roomCode = params.get('roomCode') || undefined;
+  const isHost = !roomCode;
+  const scaleFactor = parseIntParam(params.get('scale'));
 
   let networkingComponent;
 
   if (isHost) {
     networkingComponent = new NetworkingHost({
       prefabs: networkedPrefabs,
+      maxClients: 4,
     });
   } else {
     networkingComponent = new NetworkingClient({
@@ -31,13 +42,7 @@ async function createGame(opts: Opts) {
     canvas: document.getElementById('canvas') as HTMLCanvasElement,
   });
 
-  pearl.renderer.scale(2);
+  pearl.renderer.scale(scaleFactor || 2);
 }
 
-const params = new URLSearchParams(document.location.search.slice(1));
-const roomCode = params.get('roomCode');
-if (roomCode !== null) {
-  createGame({ isHost: false, roomCode });
-} else {
-  createGame({ isHost: true });
-}
+createGame();

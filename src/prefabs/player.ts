@@ -3,6 +3,7 @@ import { NetworkedPrefab, NetworkedPhysical } from 'pearl-networking';
 import Player from '../components/Player';
 import { Tag } from '../types';
 import TrailRenderer from '../components/TrailRenderer';
+import SpawningDyingRenderer from '../components/SpawningDyingRenderer';
 
 const player: NetworkedPrefab = {
   type: 'player',
@@ -22,6 +23,7 @@ const player: NetworkedPrefab = {
         fillStyle: 'white',
       }),
       new KinematicBody(),
+      new SpawningDyingRenderer(),
     ];
   },
 };

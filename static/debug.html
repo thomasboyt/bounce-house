@@ -1,0 +1,43 @@
+<html>
+  <head>
+    <style>
+      .game-iframes {
+        display: flex;
+        flex-wrap: wrap;
+      }
+
+      .game-iframes iframe {
+        flex: 0 0 auto;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="game-iframes">
+      <iframe id="host" src="game.html?host=true&scale=1" width="320" height="240"></iframe>
+    </div>
+
+    <script>
+      const numClients = 3;
+      window.addEventListener('message', (evt) => {
+        if (origin === window.location.origin) {
+          if (evt.data.type === 'hostCreatedRoom') {
+            const roomCode = evt.data.roomCode;
+            const iframesContainer = document.querySelector('.game-iframes');
+
+            for (let i = 0; i < numClients; i += 1) {
+              setTimeout(() => {
+                const iframe = document.createElement('iframe');
+                iframe.src = `/game.html?roomCode=${roomCode}&scale=1`
+                iframe.className = 'game';
+                iframe.width = '320';
+                iframe.height = '240';
+                iframesContainer.appendChild(iframe);
+              }, 10 * i)
+            }
+          }
+        }
+      });
+    </script>
+  </body>
+</html>

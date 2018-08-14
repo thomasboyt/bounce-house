@@ -17,11 +17,6 @@ import Player from './Player';
 import { Tag, ZIndex, RGB } from '../types';
 import showRoomCode from '../showRoomCode';
 
-interface Opts {
-  isHost: boolean;
-  roomCode?: string;
-}
-
 const groovejetUrl = process.env.LOBBY_SERVER || 'localhost:3000';
 
 const colors: RGB[] = [
@@ -31,8 +26,62 @@ const colors: RGB[] = [
   [255, 255, 255],
 ];
 
+class PlayerSlot {
+  color: RGB;
+  spawn: Vector2;
+
+  constructor(color: RGB, spawn: Vector2) {
+    this.color = color;
+    this.spawn = spawn;
+  }
+}
+
+const slots = [
+  new PlayerSlot(colors[0], { x: 20, y: 20 }),
+  new PlayerSlot(colors[1], { x: 80, y: 20 }),
+  new PlayerSlot(colors[2], { x: 240, y: 20 }),
+  new PlayerSlot(colors[3], { x: 300, y: 20 }),
+];
+
+const indexArray = (arr: any[]) => arr.map((item, idx) => idx);
+
+class PlayerSlotManager {
+  playerIdToSlotIdx = new Map<number, number>();
+  slots: PlayerSlot[];
+
+  constructor(slots: PlayerSlot[]) {
+    this.slots = slots;
+  }
+
+  addPlayer(id: number): PlayerSlot {
+    const takenSlotIndexes = [...this.playerIdToSlotIdx.values()];
+    const availableSlotIndexes = indexArray(this.slots).filter(
+      (index) => takenSlotIndexes.indexOf(index) === -1
+    );
+    const nextSlotIdx = availableSlotIndexes[0];
+
+    if (nextSlotIdx === -1) {
+      throw new Error('cannot add player, no slots available');
+    }
+
+    this.playerIdToSlotIdx.set(id, nextSlotIdx);
+
+    return this.slots[nextSlotIdx];
+  }
+
+  removePlayer(id: number) {
+    this.playerIdToSlotIdx.delete(id);
+  }
+}
+
+interface Opts {
+  isHost: boolean;
+  roomCode?: string;
+}
+
 export default class Game extends Component<Opts> {
   isHost!: boolean;
+  playerSlotManager?: PlayerSlotManager;
 
   init(opts: Opts) {
     this.isHost = opts.isHost;
@@ -52,20 +101,18 @@ export default class Game extends Component<Opts> {
 
     showRoomCode(roomCode);
 
-    let nextColorIdx = 0;
+    this.playerSlotManager = new PlayerSlotManager(slots);
+
     host.onPlayerAdded.add(({ networkingPlayer }) => {
-      const color = colors[nextColorIdx % (colors.length - 1)];
-      nextColorIdx += 1;
+      const slot = this.playerSlotManager!.addPlayer(networkingPlayer.id);
+      const { color, spawn } = slot;
 
       const id = networkingPlayer.id;
       const player = host.createNetworkedPrefab('player');
       player.getComponent(Player).id = id;
       player.getComponent(Player).color = color;
-
-      player.getComponent(Physical).center = {
-        x: 10,
-        y: 10,
-      };
+      player.getComponent(Player).spawn = spawn;
+      player.getComponent(Physical).center = spawn;
     });
 
     host.onPlayerRemoved.add(({ networkingPlayer }) => {
@@ -163,6 +210,7 @@ export default class Game extends Component<Opts> {
     this.pearl.entities.add(
       new Entity({
         name: 'platform',
+        tags: [Tag.Platform],
         components: [
           new Physical({ center, angle }),
           new BoxCollider({

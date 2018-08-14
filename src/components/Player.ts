@@ -11,7 +11,8 @@ import {
 } from 'pearl';
 import { NetworkedEntity, NetworkingHost } from 'pearl-networking';
 import TrailRenderer from './TrailRenderer';
-import { RGB } from '../types';
+import { RGB, Tag } from '../types';
+import SpawningDyingRenderer from './SpawningDyingRenderer';
 
 // TODO: what to do with all these constants?
 const bounceImpulse = 4;
@@ -28,6 +29,8 @@ export default class Player extends Component<void> {
   id?: number;
   vel: Vector2 = { x: 0, y: 0 };
   color!: RGB;
+  spawn!: Vector2;
+  state: 'spawning' | 'alive' | 'dead' = 'alive';
 
   init() {
     this.getComponent(TrailRenderer).trailColor = this.color;
@@ -39,11 +42,14 @@ export default class Player extends Component<void> {
       return;
     }
 
+    if (this.state !== 'alive') {
+      return;
+    }
+
     const host = this.getComponent(NetworkedEntity)
       .networking as NetworkingHost;
     const inputter = host.players.get(this.id!)!.inputter;
 
-    // this.vel = { x: 0, y: this.vel.y };
     let xDirection = 0;
     if (inputter.isKeyDown(Keys.rightArrow)) {
       xDirection += 1;
@@ -83,12 +89,13 @@ export default class Player extends Component<void> {
     }
 
     const collisions = this.getComponent(KinematicBody).moveAndSlide(this.vel);
-    const solidCollisions = collisions.filter(
-      (collision) => !collision.collider.isTrigger
+    const platformCollisions = collisions.filter(
+      (collision) =>
+        !collision.collider.isTrigger && collision.entity.hasTag(Tag.Platform)
     );
     // we only will try to handle the first collision; managing multiple is
     // kinda undefined territory (which do you bounce off, etc...)
-    const collision = solidCollisions[0];
+    const collision = platformCollisions[0];
 
     if (collision) {
       this.respondToCollision(collision);
@@ -109,6 +116,40 @@ export default class Player extends Component<void> {
     }
   }
 
+  private die() {
+    this.getComponent(BoxCollider).isEnabled = false;
+    this.vel = { x: 0, y: 0 };
+    this.state = 'dead';
+    this.rpcAnimateDie();
+  }
+
+  private respawn() {
+    this.getComponent(Physical).center = this.spawn;
+    this.state = 'spawning';
+    this.rpcAnimateSpawn();
+  }
+
+  private rpcAnimateSpawn() {
+    if (this.getComponent(NetworkedEntity).isHost) {
+      this.getComponent(SpawningDyingRenderer).spawn(() => {
+        this.state = 'alive';
+        this.getComponent(BoxCollider).isEnabled = true;
+      });
+    } else {
+      this.getComponent(SpawningDyingRenderer).spawn();
+    }
+  }
+
+  private rpcAnimateDie() {
+    if (this.getComponent(NetworkedEntity).isHost) {
+      this.getComponent(SpawningDyingRenderer).die(() => {
+        this.respawn();
+      });
+    } else {
+      this.getComponent(SpawningDyingRenderer).die();
+    }
+  }
+
   serialize(): Snapshot {
     return {
       color: this.color,
@@ -117,5 +158,15 @@ export default class Player extends Component<void> {
 
   deserialize(snapshot: Snapshot) {
     this.color = snapshot.color;
+  }
+
+  onCollision(collision: CollisionInformation) {
+    if (collision.entity.hasTag(Tag.Player)) {
+      const y = collision.response.overlapVector.y;
+      if (y < 0) {
+        // got bonked :(
+        this.die();
+      }
+    }
   }
 }

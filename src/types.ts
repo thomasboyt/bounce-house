@@ -1,5 +1,6 @@
 export enum Tag {
   Player = 'player',
+  Platform = 'platform',
 }
 
 export enum ZIndex {
