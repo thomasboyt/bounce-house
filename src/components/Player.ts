@@ -15,11 +15,19 @@ import { RGB, Tag } from '../types';
 import SpawningDyingRenderer from './SpawningDyingRenderer';
 
 // TODO: what to do with all these constants?
-const bounceImpulse = 4;
-const topSpeed = 1.5;
-const playerAccel = 0.02;
-const friction = 0.005;
-const gravity = 0.005;
+const minimumBounce = 0.25;
+const maximumBounce = 0.4;
+
+/** Horizontal speed at which player can no longer accelerate */
+const topSpeed = 0.1;
+/** Horizontal acceleration on input */
+const playerAccel = 0.002;
+/** Horizontal air friction */
+const friction = 0.0003;
+
+const gravity = 0.0003;
+const slamGravity = 0.0003;
+const bounceCoefficient = 0.85;
 
 interface Snapshot {
   color: RGB;
@@ -58,37 +66,47 @@ export default class Player extends Component<void> {
       xDirection -= 1;
     }
 
-    this.move(dt, xDirection);
+    this.move(dt, xDirection, inputter.isKeyDown(Keys.space));
   }
 
-  private move(dt: number, xDirection: number) {
-    const phys = this.getComponent(Physical);
-
-    if (Math.abs(this.vel.x) > topSpeed) {
-      // should be just enough to counteract friction
-      xDirection = 0;
+  private move(dt: number, xDirection: number, slam: boolean) {
+    let slamBoost = 0;
+    if (slam && this.vel.y > 0) {
+      slamBoost = slamGravity;
+      this.getComponent(TrailRenderer).trailColor = [255, 255, 255];
+    } else {
+      this.getComponent(TrailRenderer).trailColor = this.color;
     }
 
-    this.vel = {
-      x: this.vel.x + xDirection * playerAccel * dt,
-      y: this.vel.y + gravity * dt,
+    const accel = {
+      x: xDirection * (Math.abs(this.vel.x) > topSpeed ? 0 : playerAccel),
+      y: gravity + slamBoost,
     };
 
+    this.vel = V.add(this.vel, V.multiply(accel, dt));
+
+    // apply horizontal friction
+    //
+    // TODO: there should be a better way to do this? basically need to ensure
+    // friction causes velocity to go to zero, not negate...
     if (this.vel.x > 0) {
-      const x = this.vel.x - friction * dt;
+      const xVelocityWithFriction = this.vel.x - friction * dt;
       this.vel = {
-        x: x < 0 ? 0 : x,
+        x: xVelocityWithFriction < 0 ? 0 : xVelocityWithFriction,
         y: this.vel.y,
       };
     } else if (this.vel.x < 0) {
-      const x = this.vel.x + friction * dt;
+      const xVelocityWithFriction = this.vel.x + friction * dt;
       this.vel = {
-        x: x > 0 ? 0 : x,
+        x: xVelocityWithFriction > 0 ? 0 : xVelocityWithFriction,
         y: this.vel.y,
       };
     }
 
-    const collisions = this.getComponent(KinematicBody).moveAndSlide(this.vel);
+    const collisions = this.getComponent(KinematicBody).moveAndSlide(
+      V.multiply(this.vel, dt)
+    );
+
     const platformCollisions = collisions.filter(
       (collision) =>
         !collision.collider.isTrigger && collision.entity.hasTag(Tag.Platform)
@@ -109,7 +127,14 @@ export default class Player extends Component<void> {
       // we hit ground, so bounce
       const overlap = collision.response.overlapVector;
       const normal = V.multiply(overlap, -1);
-      this.vel = V.multiply(V.unit(normal), bounceImpulse);
+
+      const scaledBounce = this.vel.y * bounceCoefficient;
+      const impulse = Math.min(
+        Math.max(scaledBounce, minimumBounce),
+        maximumBounce
+      );
+
+      this.vel = V.multiply(V.unit(normal), impulse);
     } else if (this.vel.y < 0 && y < 0) {
       // bumping into ceiling
       this.vel = { x: this.vel.x, y: 0 };
