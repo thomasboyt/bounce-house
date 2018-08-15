@@ -1,6 +1,9 @@
 const path = require('path');
 const webpack = require('webpack');
 
+const execSync = require('child_process').execSync;
+const sha = execSync('git rev-parse --short HEAD', { encoding: 'utf8' }).trim();
+
 module.exports = {
   entry: './src/index.ts',
   module: {
@@ -39,6 +42,7 @@ module.exports = {
           process.env.LOBBY_SERVER || 'localhost:3000'
         ),
         ENABLE_SOCKET_LOG: 'true',
+        BUILD_SHA: `"${sha}"`,
       },
     }),
   ],

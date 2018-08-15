@@ -3,6 +3,11 @@ import { NetworkingHost, NetworkingClient } from 'pearl-networking';
 import Game from './components/Game';
 import networkedPrefabs from './networkedPrefabs';
 
+const shaSpan = document.querySelector('.sha');
+if (shaSpan) {
+  shaSpan.innerHTML = process.env.BUILD_SHA!;
+}
+
 const parseIntParam = (param: string | null) => {
   if (!param) {
     return undefined;
