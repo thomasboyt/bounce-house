@@ -16,7 +16,7 @@ import SpawningDyingRenderer from './SpawningDyingRenderer';
 
 // TODO: what to do with all these constants?
 const minimumBounce = 0.25;
-const maximumBounce = 0.4;
+const maximumBounce = 0.35;
 
 /** Horizontal speed at which player can no longer accelerate */
 const topSpeed = 0.1;
@@ -111,34 +111,41 @@ export default class Player extends Component<void> {
       (collision) =>
         !collision.collider.isTrigger && collision.entity.hasTag(Tag.Platform)
     );
-    // we only will try to handle the first collision; managing multiple is
-    // kinda undefined territory (which do you bounce off, etc...)
-    const collision = platformCollisions[0];
 
-    if (collision) {
-      this.respondToCollision(collision);
+    this.handlePlatformCollisions(platformCollisions);
+  }
+
+  private handlePlatformCollisions(platformCollisions: CollisionInformation[]) {
+    if (this.vel.y > 0) {
+      const bounceableCollision = platformCollisions.find(
+        (collision) => collision.response.overlapVector.y > 0
+      );
+
+      if (bounceableCollision) {
+        this.bounce(bounceableCollision);
+      }
+    } else if (this.vel.y < 0) {
+      const overheadCollision = platformCollisions.some(
+        (collision) => collision.response.overlapVector.y < 0
+      );
+
+      if (overheadCollision) {
+        this.vel = { x: this.vel.x, y: 0 };
+      }
     }
   }
 
-  private respondToCollision(collision: CollisionInformation) {
-    const { x, y } = collision.response.overlapVector;
+  private bounce(collision: CollisionInformation) {
+    const overlap = collision.response.overlapVector;
+    const normal = V.multiply(overlap, -1);
 
-    if (this.vel.y > 0 && y > 0) {
-      // we hit ground, so bounce
-      const overlap = collision.response.overlapVector;
-      const normal = V.multiply(overlap, -1);
+    const scaledBounce = this.vel.y * bounceCoefficient;
+    const impulse = Math.min(
+      Math.max(scaledBounce, minimumBounce),
+      maximumBounce
+    );
 
-      const scaledBounce = this.vel.y * bounceCoefficient;
-      const impulse = Math.min(
-        Math.max(scaledBounce, minimumBounce),
-        maximumBounce
-      );
-
-      this.vel = V.multiply(V.unit(normal), impulse);
-    } else if (this.vel.y < 0 && y < 0) {
-      // bumping into ceiling
-      this.vel = { x: this.vel.x, y: 0 };
-    }
+    this.vel = V.multiply(V.unit(normal), impulse);
   }
 
   private die() {

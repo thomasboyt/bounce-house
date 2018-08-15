@@ -139,63 +139,37 @@ export default class Game extends Component<Opts> {
   private createWorld() {
     const worldSize = this.pearl.renderer.getViewSize();
 
-    this.createPlatform({
-      center: {
-        x: worldSize.x / 2,
-        y: worldSize.y - 10,
-      },
-      size: {
-        x: worldSize.x,
-        y: 20,
-      },
-    });
+    const platforms = [
+      // ground
+      { x: worldSize.x / 2, y: worldSize.y, w: worldSize.x, h: 50 },
 
-    this.createPlatform({
-      center: {
-        x: 120,
-        y: worldSize.y - 80,
-      },
-      size: {
-        x: 40,
-        y: 20,
-      },
-      angle: Maths.degreesToRadians(45),
-    });
+      // walls
+      { x: -25, y: worldSize.y / 2, w: 50, h: worldSize.y * 4 },
+      { x: worldSize.x + 25, y: worldSize.y / 2, w: 50, h: worldSize.y * 4 },
 
-    this.createPlatform({
-      center: {
-        x: worldSize.x - 120,
-        y: worldSize.y - 120,
-      },
-      size: {
-        x: 40,
-        y: 20,
-      },
-      angle: Maths.degreesToRadians(-45),
-    });
+      // ceiling?
+      // { x: worldSize.x / 2, y: -10, w: worldSize.x, h: 20 },
 
-    this.createPlatform({
-      center: {
-        x: 120,
-        y: worldSize.y - 160,
-      },
-      size: {
-        x: 40,
-        y: 20,
-      },
-      angle: Maths.degreesToRadians(45),
-    });
+      // platforms
+      { x: 120, y: worldSize.y - 80, w: 40, h: 20, angle: 45 },
+      { x: worldSize.x - 120, y: worldSize.y - 120, w: 40, h: 20, angle: -45 },
+      { x: 120, y: worldSize.y - 160, w: 40, h: 20, angle: 45 },
+      { x: worldSize.x - 120, y: worldSize.y - 200, w: 40, h: 20 },
+    ];
 
-    this.createPlatform({
-      center: {
-        x: worldSize.x - 120,
-        y: worldSize.y - 200,
-      },
-      size: {
-        x: 40,
-        y: 20,
-      },
-    });
+    for (let platform of platforms) {
+      this.createPlatform({
+        center: {
+          x: platform.x,
+          y: platform.y,
+        },
+        size: {
+          x: platform.w,
+          y: platform.h,
+        },
+        angle: Maths.degreesToRadians(platform.angle || 0),
+      });
+    }
   }
 
   private createPlatform({
