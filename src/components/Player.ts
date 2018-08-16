@@ -34,7 +34,7 @@ interface Snapshot {
 }
 
 export default class Player extends Component<void> {
-  id?: number;
+  id?: string;
   vel: Vector2 = { x: 0, y: 0 };
   color!: RGB;
   spawn!: Vector2;

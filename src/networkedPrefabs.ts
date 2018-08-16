@@ -1,3 +1,4 @@
 import player from './prefabs/player';
+import session from './prefabs/session';
 
-export default { player };
+export default { player, session };

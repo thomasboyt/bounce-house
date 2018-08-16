@@ -16,63 +16,10 @@ import {
 import Player from './Player';
 import { Tag, ZIndex, RGB } from '../types';
 import showRoomCode from '../showRoomCode';
+import levels, { Level, Platform } from '../levels';
+import Session from './Session';
 
 const groovejetUrl = process.env.LOBBY_SERVER || 'localhost:3000';
-
-const colors: RGB[] = [
-  [0, 183, 235],
-  [255, 0, 144],
-  [255, 255, 0],
-  [255, 255, 255],
-];
-
-class PlayerSlot {
-  color: RGB;
-  spawn: Vector2;
-
-  constructor(color: RGB, spawn: Vector2) {
-    this.color = color;
-    this.spawn = spawn;
-  }
-}
-
-const slots = [
-  new PlayerSlot(colors[0], { x: 20, y: 120 }),
-  new PlayerSlot(colors[1], { x: 80, y: 120 }),
-  new PlayerSlot(colors[2], { x: 240, y: 120 }),
-  new PlayerSlot(colors[3], { x: 300, y: 120 }),
-];
-
-const indexArray = (arr: any[]) => arr.map((item, idx) => idx);
-
-class PlayerSlotManager {
-  playerIdToSlotIdx = new Map<number, number>();
-  slots: PlayerSlot[];
-
-  constructor(slots: PlayerSlot[]) {
-    this.slots = slots;
-  }
-
-  addPlayer(id: number): PlayerSlot {
-    const takenSlotIndexes = [...this.playerIdToSlotIdx.values()];
-    const availableSlotIndexes = indexArray(this.slots).filter(
-      (index) => takenSlotIndexes.indexOf(index) === -1
-    );
-    const nextSlotIdx = availableSlotIndexes[0];
-
-    if (nextSlotIdx === -1) {
-      throw new Error('cannot add player, no slots available');
-    }
-
-    this.playerIdToSlotIdx.set(id, nextSlotIdx);
-
-    return this.slots[nextSlotIdx];
-  }
-
-  removePlayer(id: number) {
-    this.playerIdToSlotIdx.delete(id);
-  }
-}
 
 interface Opts {
   isHost: boolean;
@@ -81,7 +28,6 @@ interface Opts {
 
 export default class Game extends Component<Opts> {
   isHost!: boolean;
-  playerSlotManager?: PlayerSlotManager;
 
   init(opts: Opts) {
     this.isHost = opts.isHost;
@@ -91,8 +37,6 @@ export default class Game extends Component<Opts> {
     } else {
       this.runCoroutine(this.initializeClient(opts.roomCode!));
     }
-
-    this.createWorld();
   }
 
   private *initializeHost() {
@@ -101,31 +45,18 @@ export default class Game extends Component<Opts> {
 
     showRoomCode(roomCode);
 
-    this.playerSlotManager = new PlayerSlotManager(slots);
+    const session = host.createNetworkedPrefab('session').getComponent(Session);
 
     host.onPlayerAdded.add(({ networkingPlayer }) => {
-      const slot = this.playerSlotManager!.addPlayer(networkingPlayer.id);
-      const { color, spawn } = slot;
-
-      const id = networkingPlayer.id;
-      const player = host.createNetworkedPrefab('player');
-      player.getComponent(Player).id = id;
-      player.getComponent(Player).color = color;
-      player.getComponent(Player).spawn = spawn;
-      player.getComponent(Physical).center = spawn;
+      session.addPlayer(networkingPlayer.id);
     });
 
     host.onPlayerRemoved.add(({ networkingPlayer }) => {
-      const id = networkingPlayer.id;
-      const players = this.pearl.entities.all(Tag.Player);
-      for (let player of players) {
-        if (player.getComponent(Player).id === id) {
-          this.pearl.entities.destroy(player);
-        }
-      }
+      session.addPlayer(networkingPlayer.id);
     });
 
     host.addLocalPlayer();
+    session.rpcLoadLevel(1);
   }
 
   private *initializeClient(roomCode: string) {
@@ -134,69 +65,6 @@ export default class Game extends Component<Opts> {
       roomCode,
     });
     showRoomCode(roomCode);
-  }
-
-  private createWorld() {
-    const worldSize = this.pearl.renderer.getViewSize();
-
-    const platforms = [
-      // ground
-      { x: worldSize.x / 2, y: worldSize.y, w: worldSize.x, h: 50 },
-
-      // walls
-      { x: -25, y: worldSize.y / 2, w: 50, h: worldSize.y * 4 },
-      { x: worldSize.x + 25, y: worldSize.y / 2, w: 50, h: worldSize.y * 4 },
-
-      // ceiling?
-      // { x: worldSize.x / 2, y: -10, w: worldSize.x, h: 20 },
-
-      // platforms
-      { x: 120, y: worldSize.y - 80, w: 40, h: 20, angle: 45 },
-      { x: worldSize.x - 120, y: worldSize.y - 120, w: 40, h: 20, angle: -45 },
-      { x: 120, y: worldSize.y - 160, w: 40, h: 20, angle: 45 },
-      { x: worldSize.x - 120, y: worldSize.y - 200, w: 40, h: 20 },
-    ];
-
-    for (let platform of platforms) {
-      this.createPlatform({
-        center: {
-          x: platform.x,
-          y: platform.y,
-        },
-        size: {
-          x: platform.w,
-          y: platform.h,
-        },
-        angle: Maths.degreesToRadians(platform.angle || 0),
-      });
-    }
-  }
-
-  private createPlatform({
-    center,
-    size,
-    angle = 0,
-  }: {
-    center: Vector2;
-    size: Vector2;
-    angle?: number;
-  }) {
-    this.pearl.entities.add(
-      new Entity({
-        name: 'platform',
-        tags: [Tag.Platform],
-        components: [
-          new Physical({ center, angle }),
-          new BoxCollider({
-            width: size.x,
-            height: size.y,
-          }),
-          new BoxRenderer({
-            strokeStyle: 'white',
-          }),
-        ],
-      })
-    );
   }
 
   render(ctx: CanvasRenderingContext2D) {
