@@ -26,8 +26,8 @@ const playerAccel = 0.002;
 const friction = 0.0003;
 
 const gravity = 0.0003;
-const slamGravity = 0.0003;
 const bounceCoefficient = 0.85;
+const slamBoost = 0.1;
 
 interface Snapshot {
   color: RGB;
@@ -39,6 +39,15 @@ export default class Player extends Component<void> {
   color!: RGB;
   spawn!: Vector2;
   state: 'spawning' | 'alive' | 'dead' = 'alive';
+  isSlamming: boolean = false;
+  currentSlamBoost = 0;
+
+  get velWithBoost() {
+    return V.add(this.vel, {
+      x: 0,
+      y: this.currentSlamBoost,
+    });
+  }
 
   init() {
     this.getComponent(TrailRenderer).trailColor = this.color;
@@ -65,22 +74,32 @@ export default class Player extends Component<void> {
     if (inputter.isKeyDown(Keys.leftArrow)) {
       xDirection -= 1;
     }
-
-    this.move(dt, xDirection, inputter.isKeyDown(Keys.space));
-  }
-
-  private move(dt: number, xDirection: number, slam: boolean) {
-    let slamBoost = 0;
-    if (slam && this.vel.y > 0) {
-      slamBoost = slamGravity;
-      this.getComponent(TrailRenderer).trailColor = [255, 255, 255];
-    } else {
-      this.getComponent(TrailRenderer).trailColor = this.color;
+    if (inputter.isKeyPressed(Keys.space)) {
+      this.slam();
     }
 
+    this.move(dt, xDirection);
+  }
+
+  private slam() {
+    if (this.isSlamming || !(this.vel.y > 0)) {
+      return;
+    }
+
+    this.isSlamming = true;
+    this.currentSlamBoost = slamBoost;
+
+    this.runCoroutine(function*(this: Player) {
+      yield this.pearl.async.waitMs(200);
+      this.isSlamming = false;
+      this.currentSlamBoost = 0;
+    });
+  }
+
+  private move(dt: number, xDirection: number) {
     const accel = {
       x: xDirection * (Math.abs(this.vel.x) > topSpeed ? 0 : playerAccel),
-      y: gravity + slamBoost,
+      y: gravity,
     };
 
     this.vel = V.add(this.vel, V.multiply(accel, dt));
@@ -104,7 +123,7 @@ export default class Player extends Component<void> {
     }
 
     const collisions = this.getComponent(KinematicBody).moveAndSlide(
-      V.multiply(this.vel, dt)
+      V.multiply(this.velWithBoost, dt)
     );
 
     const platformCollisions = collisions.filter(
@@ -139,13 +158,15 @@ export default class Player extends Component<void> {
     const overlap = collision.response.overlapVector;
     const normal = V.multiply(overlap, -1);
 
-    const scaledBounce = this.vel.y * bounceCoefficient;
+    const scaledBounce = this.velWithBoost.y * bounceCoefficient;
     const impulse = Math.min(
       Math.max(scaledBounce, minimumBounce),
       maximumBounce
     );
 
     this.vel = V.multiply(V.unit(normal), impulse);
+    this.isSlamming = false;
+    this.currentSlamBoost = 0;
   }
 
   private die() {
