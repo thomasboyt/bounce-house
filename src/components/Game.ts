@@ -37,10 +37,10 @@ class PlayerSlot {
 }
 
 const slots = [
-  new PlayerSlot(colors[0], { x: 20, y: 20 }),
-  new PlayerSlot(colors[1], { x: 80, y: 20 }),
-  new PlayerSlot(colors[2], { x: 240, y: 20 }),
-  new PlayerSlot(colors[3], { x: 300, y: 20 }),
+  new PlayerSlot(colors[0], { x: 20, y: 120 }),
+  new PlayerSlot(colors[1], { x: 80, y: 120 }),
+  new PlayerSlot(colors[2], { x: 240, y: 120 }),
+  new PlayerSlot(colors[3], { x: 300, y: 120 }),
 ];
 
 const indexArray = (arr: any[]) => arr.map((item, idx) => idx);
