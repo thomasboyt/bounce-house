@@ -28,14 +28,18 @@ interface Opts {
 
 export default class Game extends Component<Opts> {
   isHost!: boolean;
+  roomCode?: string;
 
-  init(opts: Opts) {
+  create(opts: Opts) {
     this.isHost = opts.isHost;
+    this.roomCode = opts.roomCode;
+  }
 
-    if (opts.isHost) {
+  init() {
+    if (this.isHost) {
       this.runCoroutine(this.initializeHost());
     } else {
-      this.runCoroutine(this.initializeClient(opts.roomCode!));
+      this.runCoroutine(this.initializeClient(this.roomCode!));
     }
   }
 
