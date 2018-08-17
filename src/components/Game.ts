@@ -56,7 +56,7 @@ export default class Game extends Component<Opts> {
     });
 
     host.onPlayerRemoved.add(({ networkingPlayer }) => {
-      session.addPlayer(networkingPlayer.id);
+      session.removePlayer(networkingPlayer.id);
     });
 
     host.addLocalPlayer();
