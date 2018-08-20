@@ -53,7 +53,7 @@ class PlayerSlotManager {
     );
     const nextSlotIdx = availableSlotIndexes[0];
 
-    if (nextSlotIdx === -1) {
+    if (nextSlotIdx === undefined) {
       throw new Error('cannot add player, no slots available');
     }
 
@@ -114,6 +114,8 @@ export default class Session extends Component<void> {
         this.pearl.entities.destroy(player);
       }
     }
+
+    this.playerSlotManager!.removePlayer(id);
   }
 
   rpcLoadLevel(levelIdx: number) {
