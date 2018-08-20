@@ -138,38 +138,23 @@ export default class Session extends Component<void> {
     ];
 
     for (let platform of [...walls, ...platforms]) {
-      this.createPlatform({
-        center: {
-          x: platform.x,
-          y: platform.y,
-        },
-        size: {
-          x: platform.w,
-          y: platform.h,
-        },
-        angle: Maths.degreesToRadians(platform.angle || 0),
-      });
+      this.createPlatform(platform);
     }
   }
 
-  private createPlatform({
-    center,
-    size,
-    angle = 0,
-  }: {
-    center: Vector2;
-    size: Vector2;
-    angle?: number;
-  }) {
+  private createPlatform(platform: Platform) {
     this.pearl.entities.add(
       new Entity({
         name: 'platform',
         tags: [Tag.Platform],
         components: [
-          new Physical({ center, angle }),
+          new Physical({
+            center: { x: platform.x, y: platform.y },
+            angle: Maths.degreesToRadians(platform.angle || 0),
+          }),
           new BoxCollider({
-            width: size.x,
-            height: size.y,
+            width: platform.w,
+            height: platform.h,
           }),
           new BoxRenderer({
             strokeStyle: 'white',
