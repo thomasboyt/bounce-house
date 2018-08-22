@@ -1,6 +1,7 @@
 export enum Tag {
   Player = 'player',
   Platform = 'platform',
+  Session = 'session',
 }
 
 export enum ZIndex {

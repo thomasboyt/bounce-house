@@ -13,6 +13,7 @@ import { NetworkedEntity, NetworkingHost } from 'pearl-networking';
 import TrailRenderer from './TrailRenderer';
 import { RGB, Tag } from '../types';
 import SpawningDyingRenderer from './SpawningDyingRenderer';
+import CameraMover from './CameraMover';
 
 // TODO: what to do with all these constants?
 const minimumBounce = 0.25;
@@ -31,6 +32,8 @@ const slamBoost = 0.1;
 
 interface Snapshot {
   color: RGB;
+  slotPosition: number;
+  id: string;
 }
 
 export default class Player extends Component<void> {
@@ -39,7 +42,9 @@ export default class Player extends Component<void> {
   color!: RGB;
   spawn!: Vector2;
   state: 'spawning' | 'alive' | 'dead' = 'alive';
+  score = 0;
   isSlamming: boolean = false;
+  slotPosition!: number;
 
   init() {
     this.getComponent(TrailRenderer).trailColor = this.color;
@@ -47,10 +52,18 @@ export default class Player extends Component<void> {
   }
 
   update(dt: number) {
-    if (!this.getComponent(NetworkedEntity).isHost) {
-      return;
+    const networking = this.getComponent(NetworkedEntity).networking;
+
+    if (this.getComponent(NetworkedEntity).isHost) {
+      this.updateHost(dt);
     }
 
+    if (this.id === networking.clientId) {
+      this.updateCamera();
+    }
+  }
+
+  private updateHost(dt: number) {
     if (this.state !== 'alive') {
       return;
     }
@@ -71,6 +84,12 @@ export default class Player extends Component<void> {
     }
 
     this.move(dt, xDirection);
+  }
+
+  private updateCamera() {
+    const session = this.pearl.entities.all(Tag.Session)[0];
+    const center = this.getComponent(Physical).center;
+    session.getComponent(CameraMover).moveCamera(center);
   }
 
   private slam() {
@@ -196,23 +215,27 @@ export default class Player extends Component<void> {
     }
   }
 
-  serialize(): Snapshot {
-    return {
-      color: this.color,
-    };
-  }
-
-  deserialize(snapshot: Snapshot) {
-    this.color = snapshot.color;
-  }
-
   onCollision(collision: CollisionInformation) {
     if (collision.entity.hasTag(Tag.Player)) {
       const y = collision.response.overlapVector.y;
       if (y < 0) {
         // got bonked :(
+        collision.entity.getComponent(Player).score += 1;
         this.die();
       }
     }
+  }
+  serialize(): Snapshot {
+    return {
+      color: this.color,
+      slotPosition: this.slotPosition,
+      id: this.id!,
+    };
+  }
+
+  deserialize(snapshot: Snapshot) {
+    this.color = snapshot.color;
+    this.slotPosition = snapshot.slotPosition;
+    this.id = snapshot.id;
   }
 }

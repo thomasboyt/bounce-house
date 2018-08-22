@@ -11,6 +11,7 @@ import {
   NetworkingClient,
   NetworkingHost,
   NetworkedPhysical,
+  GroovejetError,
 } from 'pearl-networking';
 
 import Player from './Player';
@@ -45,7 +46,16 @@ export default class Game extends Component<Opts> {
 
   private *initializeHost() {
     const host = this.getComponent(NetworkingHost);
-    const roomCode = yield host.connect(groovejetUrl);
+
+    let roomCode;
+    try {
+      roomCode = yield host.connect(groovejetUrl);
+    } catch (err) {
+      if (!(err instanceof GroovejetError)) {
+        throw err;
+      }
+      return;
+    }
 
     showRoomCode(roomCode);
 
@@ -60,14 +70,20 @@ export default class Game extends Component<Opts> {
     });
 
     host.addLocalPlayer();
-    session.rpcLoadLevel(1);
   }
 
   private *initializeClient(roomCode: string) {
-    yield this.getComponent(NetworkingClient).connect({
-      groovejetUrl,
-      roomCode,
-    });
+    try {
+      yield this.getComponent(NetworkingClient).connect({
+        groovejetUrl,
+        roomCode,
+      });
+    } catch (err) {
+      if (!(err instanceof GroovejetError)) {
+        throw err;
+      }
+      return;
+    }
     showRoomCode(roomCode);
   }
 
@@ -78,22 +94,16 @@ export default class Game extends Component<Opts> {
     ctx.fillStyle = 'white';
     ctx.textAlign = 'center';
 
-    if (this.isHost) {
-      const host = this.getComponent(NetworkingHost);
-      if (host.connectionState === 'connecting') {
-        ctx.fillText('connecting to lobby...', size.x / 2, size.y / 2);
-      }
-    } else {
-      const client = this.getComponent(NetworkingClient);
+    const networking = (this.entity.maybeGetComponent(NetworkingHost) ||
+      this.entity.maybeGetComponent(NetworkingClient))!;
 
-      if (client.connectionState === 'connecting') {
-        ctx.fillText('connecting', size.x / 2, size.y / 2);
-      } else if (client.connectionState === 'error') {
-        ctx.fillText('connection error:', size.x / 2, size.y / 2);
-        ctx.fillText(client.errorReason!, size.x / 2, size.y / 2 + 20);
-      } else if (client.connectionState === 'closed') {
-        ctx.fillText('connection closed', size.x / 2, size.y / 2);
-      }
+    if (networking.connectionState === 'connecting') {
+      ctx.fillText('connecting...', size.x / 2, size.y / 2);
+    } else if (networking.connectionState === 'error') {
+      ctx.fillText('connection error:', size.x / 2, size.y / 2);
+      ctx.fillText(networking.errorReason!, size.x / 2, size.y / 2 + 20);
+    } else if (networking.connectionState === 'closed') {
+      ctx.fillText('connection closed', size.x / 2, size.y / 2);
     }
   }
 }
