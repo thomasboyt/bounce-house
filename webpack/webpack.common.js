@@ -26,6 +26,10 @@ module.exports = {
           },
         },
       },
+      {
+        test: /\.svg$/,
+        use: 'raw-loader',
+      },
     ],
   },
   resolve: {
@@ -41,7 +45,7 @@ module.exports = {
         LOBBY_SERVER: JSON.stringify(
           process.env.LOBBY_SERVER || 'localhost:3000'
         ),
-        ENABLE_SOCKET_LOG: 'true',
+        // ENABLE_SOCKET_LOG: 'true',
         BUILD_SHA: `"${sha}"`,
       },
     }),

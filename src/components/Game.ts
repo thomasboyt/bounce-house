@@ -17,7 +17,6 @@ import {
 import Player from './Player';
 import { Tag, ZIndex, RGB } from '../types';
 import showRoomCode from '../showRoomCode';
-import levels, { Level, Platform } from '../levels';
 import Session from './Session';
 
 const groovejetUrl = process.env.LOBBY_SERVER || 'localhost:3000';

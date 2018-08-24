@@ -10,8 +10,10 @@ import {
 import { NetworkedEntity, NetworkingHost } from 'pearl-networking';
 import Player from './Player';
 import { Tag, RGB } from '../types';
-import levels, { Platform, Level } from '../levels';
+import levels, { Level } from '../levels';
 import CameraMover from './CameraMover';
+import LevelLoader from './LevelLoader';
+import { RectangleLevelShape } from '../parseSVGLevel';
 
 const colors: RGB[] = [
   [0, 183, 235],
@@ -182,48 +184,21 @@ export default class Session extends Component<void> {
 
     this.currentLevel = level;
     this.currentLevelIdx = levelIdx;
-    this.createWorld(level.platforms);
+    this.getComponent(LevelLoader).loadLevel(level);
 
-    const lowestPlatformTop = level.platforms.reduce(
-      (prevTop, platform) => Math.max(prevTop, platform.y - platform.h / 2),
-      0
-    );
+    // TODO: make this work for polygons too
+    const lowestPlatformTop = level.platforms
+      .filter(
+        (platform): platform is RectangleLevelShape =>
+          platform.type === 'rectangle'
+      )
+      .reduce(
+        (prevTop, platform) =>
+          Math.max(prevTop, platform.center.y - platform.size.y / 2),
+        0
+      );
+
     this.getComponent(CameraMover).yMaximum = lowestPlatformTop + 20;
-  }
-
-  private createWorld(platforms: Platform[]) {
-    const worldSize = this.pearl.renderer.getViewSize();
-
-    const walls: Platform[] = [
-      { x: -25, y: worldSize.y / 2, w: 50, h: worldSize.y * 4 },
-      { x: worldSize.x + 25, y: worldSize.y / 2, w: 50, h: worldSize.y * 4 },
-    ];
-
-    for (let platform of [...walls, ...platforms]) {
-      this.createPlatform(platform);
-    }
-  }
-
-  private createPlatform(platform: Platform) {
-    this.pearl.entities.add(
-      new Entity({
-        name: 'platform',
-        tags: [Tag.Platform],
-        components: [
-          new Physical({
-            center: { x: platform.x, y: platform.y },
-            angle: Maths.degreesToRadians(platform.angle || 0),
-          }),
-          new BoxCollider({
-            width: platform.w,
-            height: platform.h,
-          }),
-          new BoxRenderer({
-            strokeStyle: 'white',
-          }),
-        ],
-      })
-    );
   }
 
   render(ctx: CanvasRenderingContext2D) {

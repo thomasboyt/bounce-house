@@ -1,6 +1,7 @@
 import { NetworkedPrefab } from 'pearl-networking';
 import Session from '../components/Session';
 import CameraMover from '../components/CameraMover';
+import LevelLoader from '../components/LevelLoader';
 import { Tag } from '../types';
 
 const session: NetworkedPrefab = {
@@ -8,7 +9,7 @@ const session: NetworkedPrefab = {
   tags: [Tag.Session],
 
   createComponents() {
-    return [new Session(), new CameraMover()];
+    return [new Session(), new CameraMover(), new LevelLoader()];
   },
 };
 
