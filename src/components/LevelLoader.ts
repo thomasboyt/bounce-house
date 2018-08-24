@@ -47,7 +47,6 @@ export default class LevelLoader extends Component<void> {
   }
 
   private createBoxPlatform(shape: RectangleLevelShape) {
-    console.log(shape.center);
     this.pearl.entities.add(
       new Entity({
         name: 'platform',

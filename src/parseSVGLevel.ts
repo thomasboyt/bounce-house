@@ -135,6 +135,5 @@ export default function parseSVGLevel(svgDocument: string): LevelShape[] {
     }
   }
 
-  console.log(shapes);
   return shapes;
 }
