@@ -102,8 +102,8 @@ export default class Session extends Component<void> {
     for (let k = 48; k < 58; k += 1) {
       if (this.pearl.inputter.isKeyPressed(k)) {
         const n = k - 48;
-        if (levels[n]) {
-          this.setLevel(n);
+        if (levels[n - 1]) {
+          this.setLevel(n - 1);
         }
       }
     }
