@@ -16,8 +16,26 @@ import parseSVGLevel, {
 import { Tag } from '../types';
 import { Level } from '../levels';
 
+/**
+ * Responsible for adding and removing platforms from the game world when the
+ * level changes.
+ *
+ * changeLevel() is used on both hosts AND clients, since platforms aren't
+ * network-managed to reduce the amount of data going over the wire. This may
+ * change in the future if weird stuff is added (e.g. moving platforms), in
+ * which case this component might end up getting used on just the host.
+ */
 export default class LevelLoader extends Component<void> {
-  loadLevel(level: Level) {
+  changeLevel(level: Level) {
+    const existing = this.pearl.entities.all(Tag.Platform);
+    for (let entity of existing) {
+      this.pearl.entities.destroy(entity);
+    }
+
+    this.loadLevel(level);
+  }
+
+  private loadLevel(level: Level) {
     const worldSize = this.pearl.renderer.getViewSize();
 
     const walls: RectangleLevelShape[] = [

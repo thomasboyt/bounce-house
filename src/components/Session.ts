@@ -135,7 +135,7 @@ export default class Session extends Component<void> {
     this.playerSlotManager!.removePlayer(id);
   }
 
-  createPlayerEntity(playerId: string, slot: PlayerSlot) {
+  private createPlayerEntity(playerId: string, slot: PlayerSlot) {
     if (!this.currentLevel) {
       return;
     }
@@ -154,7 +154,7 @@ export default class Session extends Component<void> {
     player.getComponent(Physical).center = spawn;
   }
 
-  setLevel(levelIdx: number) {
+  private setLevel(levelIdx: number) {
     const players = this.pearl.entities.all(Tag.Player);
     for (let player of players) {
       this.pearl.entities.destroy(player);
@@ -171,20 +171,15 @@ export default class Session extends Component<void> {
     }
   }
 
-  rpcLoadLevel(levelIdx: number) {
+  private rpcLoadLevel(levelIdx: number) {
     const level = levels[levelIdx];
     if (level === this.currentLevel) {
       return;
     }
 
-    const existing = this.pearl.entities.all(Tag.Platform);
-    for (let entity of existing) {
-      this.pearl.entities.destroy(entity);
-    }
-
     this.currentLevel = level;
     this.currentLevelIdx = levelIdx;
-    this.getComponent(LevelLoader).loadLevel(level);
+    this.getComponent(LevelLoader).changeLevel(level);
 
     // TODO: make this work for polygons too
     const lowestPlatformTop = level.platforms
@@ -199,28 +194,5 @@ export default class Session extends Component<void> {
       );
 
     this.getComponent(CameraMover).yMaximum = lowestPlatformTop + 20;
-  }
-
-  render(ctx: CanvasRenderingContext2D) {
-    const players = this.pearl.entities.all(Tag.Player);
-
-    const viewCenter = this.pearl.renderer.getViewCenter();
-    const viewSize = this.pearl.renderer.getViewSize();
-    ctx.translate(viewCenter.x - viewSize.x / 2, viewCenter.y - viewSize.y / 2);
-
-    ctx.font = '16px monospace';
-    ctx.textAlign = 'center';
-
-    for (let playerEntity of players) {
-      const player = playerEntity.getComponent(Player);
-      const { slotPosition, color } = player;
-      // TODO: I dunno if this is actually centered
-      const x = slotPosition * 80 + 40;
-      const y = 20;
-
-      const score = player.score;
-      ctx.fillStyle = `rgba(${color.join(',')})`;
-      ctx.fillText(`${score}`, x, y);
-    }
   }
 }
