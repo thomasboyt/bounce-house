@@ -14,7 +14,7 @@
 
   <body>
     <div class="game-iframes">
-      <iframe id="host" src="game.html?host=true&scale=1" width="320" height="240"></iframe>
+      <iframe id="host" src="game.html?host=true&scale=1" width="320" height="320"></iframe>
     </div>
 
     <script>
@@ -31,7 +31,7 @@
                 iframe.src = `/game.html?roomCode=${roomCode}&scale=1`
                 iframe.className = 'game';
                 iframe.width = '320';
-                iframe.height = '240';
+                iframe.height = '320';
                 iframesContainer.appendChild(iframe);
               }, 10 * i)
             }

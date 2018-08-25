@@ -180,19 +180,6 @@ export default class Session extends Component<void> {
     this.currentLevel = level;
     this.currentLevelIdx = levelIdx;
     this.getComponent(LevelLoader).changeLevel(level);
-
-    // TODO: make this work for polygons too
-    const lowestPlatformTop = level.platforms
-      .filter(
-        (platform): platform is RectangleLevelShape =>
-          platform.type === 'rectangle'
-      )
-      .reduce(
-        (prevTop, platform) =>
-          Math.max(prevTop, platform.center.y - platform.size.y / 2),
-        0
-      );
-
-    this.getComponent(CameraMover).yMaximum = lowestPlatformTop + 20;
+    this.getComponent(CameraMover).setWorldSize(level.size);
   }
 }

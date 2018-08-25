@@ -1,22 +1,49 @@
 import { Component, VectorMaths as V, Vector2, Maths } from 'pearl';
 const { lerp } = Maths;
 
+// TODO: move this to  maths
+function clamp(number: number, upper: number): number;
+function clamp(number: number, lower: number, upper: number): number;
+function clamp(number: number, a: number, b?: number): number {
+  let upper, lower;
+  if (b !== undefined) {
+    lower = a;
+    upper = b;
+  } else {
+    upper = a;
+  }
+
+  number = number <= upper ? number : upper;
+  if (lower !== undefined) {
+    number = number >= lower ? number : lower;
+  }
+  return number;
+}
+
 export default class CameraMover extends Component<void> {
   followCenter!: Vector2;
   targetCenter!: Vector2;
 
   // distance from center of the screen the player has to be at for the camera
   // to move
-  windowEdges = {
-    topPadding: 20,
-    bottomPadding: 80,
+  windowPadding = {
+    top: 20,
+    bottom: 80,
+    left: 60,
+    right: 60,
   };
 
-  yMaximum?: number;
+  // don't move past edges of world
+  // (assumes world is positioned at 0, 0)
+  private worldSize?: Vector2;
 
   init() {
     this.followCenter = this.pearl.renderer.getViewCenter();
     this.targetCenter = this.followCenter;
+  }
+
+  setWorldSize(worldSize: Vector2) {
+    this.worldSize = worldSize;
   }
 
   moveCamera(followCenter: Vector2) {
@@ -26,28 +53,49 @@ export default class CameraMover extends Component<void> {
   update(dt: number) {
     const viewSize = this.pearl.renderer.getViewSize();
     const viewCenter = this.pearl.renderer.getViewCenter();
-    const { followCenter, windowEdges } = this;
+    const { followCenter, windowPadding } = this;
 
-    const relViewportY = followCenter.y - (viewCenter.y - viewSize.y / 2);
+    const windowEdges = {
+      top: viewCenter.y - viewSize.y / 2 + windowPadding.top,
+      bottom: viewCenter.y + viewSize.y / 2 - windowPadding.bottom,
+      left: viewCenter.x - viewSize.x / 2 + windowPadding.left,
+      right: viewCenter.x + viewSize.x / 2 - windowPadding.right,
+    };
 
-    if (relViewportY > viewSize.y - windowEdges.bottomPadding) {
+    if (followCenter.x < windowEdges.left) {
       this.targetCenter = V.add(this.targetCenter, {
-        x: 0,
-        y: relViewportY - (viewSize.y - windowEdges.bottomPadding),
+        x: followCenter.x - windowEdges.left,
+        y: 0,
       });
-    } else if (relViewportY < windowEdges.topPadding) {
+    } else if (followCenter.x > windowEdges.right) {
       this.targetCenter = V.add(this.targetCenter, {
-        x: 0,
-        y: relViewportY - windowEdges.topPadding,
+        x: followCenter.x - windowEdges.right,
+        y: 0,
       });
     }
 
-    const bottomViewportEdge = this.targetCenter.y + viewSize.y / 2;
-    if (this.yMaximum !== undefined && bottomViewportEdge > this.yMaximum) {
-      this.targetCenter = V.subtract(this.targetCenter, {
+    if (followCenter.y < windowEdges.top) {
+      this.targetCenter = V.add(this.targetCenter, {
         x: 0,
-        y: bottomViewportEdge - this.yMaximum,
+        y: followCenter.y - windowEdges.top,
       });
+    } else if (followCenter.y > windowEdges.bottom) {
+      this.targetCenter = V.add(this.targetCenter, {
+        x: 0,
+        y: followCenter.y - windowEdges.bottom,
+      });
+    }
+
+    if (this.worldSize) {
+      this.targetCenter = {
+        x: clamp(
+          this.targetCenter.x,
+          viewSize.x / 2,
+          this.worldSize.x - viewSize.x / 2
+        ),
+        // no lower bound because we can bounce above world size
+        y: clamp(this.targetCenter.y, this.worldSize.y - viewSize.y / 2),
+      };
     }
 
     this.pearl.renderer.setViewCenter(this.targetCenter);

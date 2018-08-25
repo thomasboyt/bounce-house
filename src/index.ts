@@ -42,12 +42,12 @@ async function createGame() {
   const pearl = await createPearl({
     rootComponents: [new Game({ isHost, roomCode }), networkingComponent],
     width: 320,
-    height: 240,
+    height: 320,
     backgroundColor: 'black',
     canvas: document.getElementById('canvas') as HTMLCanvasElement,
   });
 
-  pearl.renderer.scale(scaleFactor || 2);
+  pearl.renderer.scale(scaleFactor || 1.5);
 }
 
 createGame();

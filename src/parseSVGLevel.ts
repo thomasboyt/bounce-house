@@ -19,8 +19,17 @@ export interface PolygonLevelShape extends BaseShape {
 
 export type LevelShape = RectangleLevelShape | PolygonLevelShape;
 
+export interface ParsedLevel {
+  platforms: LevelShape[];
+  size: Vector2;
+}
+
 function parseSVGAnimatedLength(len: SVGAnimatedLength): number {
-  if (len.baseVal.unitType !== len.baseVal.SVG_LENGTHTYPE_NUMBER) {
+  const allowedUnits = new Set([
+    len.baseVal.SVG_LENGTHTYPE_NUMBER,
+    len.baseVal.SVG_LENGTHTYPE_PX,
+  ]);
+  if (!allowedUnits.has(len.baseVal.unitType)) {
     throw new Error(
       `unrecognized unit type for SVGAnimatedLength: ${
         len.baseVal.valueAsString
@@ -44,11 +53,27 @@ function svgListToArray<T>(list: SVGList<T>): T[] {
   return arr;
 }
 
+// TODO: support rotating around a non-center point?
 function parseRotation(el: SVGGraphicsElement): number {
+  const rotates = svgListToArray(el.transform.baseVal).filter(
+    (transform) => transform.type === transform.SVG_TRANSFORM_ROTATE
+  );
+  return rotates.reduce((acc, transform) => acc + transform.angle, 0);
+}
+
+function parseScale(el: SVGGraphicsElement): Vector2 {
   const transforms = el.transform.baseVal;
-  return svgListToArray(transforms).reduce(
-    (acc, transform) => acc + transform.angle,
-    0
+  const scales = svgListToArray(el.transform.baseVal).filter(
+    (transform) => transform.type === transform.SVG_TRANSFORM_SCALE
+  );
+  return scales.reduce(
+    (acc, transform) => {
+      return {
+        x: acc.x * transform.matrix.a,
+        y: acc.y * transform.matrix.d,
+      };
+    },
+    { x: 1, y: 1 }
   );
 }
 
@@ -68,7 +93,7 @@ function getBoundingBoxForPoints(
   return { min, max };
 }
 
-export default function parseSVGLevel(svgDocument: string): LevelShape[] {
+export default function parseSVGLevel(svgDocument: string): ParsedLevel {
   const parser = new DOMParser();
   const doc = parser.parseFromString(svgDocument, 'image/svg+xml');
 
@@ -120,9 +145,17 @@ export default function parseSVGLevel(svgDocument: string): LevelShape[] {
         y: (box.min.y + box.max.y) / 2,
       };
 
-      const localPoints: [number, number][] = worldPoints.map(
-        (point) => [point.x - center.x, point.y - center.y] as [number, number]
-      );
+      const scale = parseScale(polygon);
+
+      const localPoints: [number, number][] = worldPoints
+        .map(
+          (point) =>
+            [point.x - center.x, point.y - center.y] as [number, number]
+        )
+        .map(
+          (point) =>
+            [point[0] * scale.x, point[1] * scale.y] as [number, number]
+        );
 
       shapes.push({
         type: 'polygon',
@@ -135,5 +168,14 @@ export default function parseSVGLevel(svgDocument: string): LevelShape[] {
     }
   }
 
-  return shapes;
+  const width = parseSVGAnimatedLength(doc.rootElement.width);
+  const height = parseSVGAnimatedLength(doc.rootElement.height);
+
+  return {
+    platforms: shapes,
+    size: {
+      x: width,
+      y: height,
+    },
+  };
 }

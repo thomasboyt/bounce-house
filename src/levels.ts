@@ -9,6 +9,7 @@ const levelSize = {
 export interface Level {
   spawns: [Vector2, Vector2, Vector2, Vector2];
   platforms: LevelShape[];
+  size: Vector2;
 }
 
 const levelOne: Level = {
@@ -30,7 +31,7 @@ const levelOne: Level = {
       y: 120,
     },
   ],
-  platforms: parseSVGLevel(require('../assets/level-1.svg')),
+  ...parseSVGLevel(require('../assets/level-1.svg')),
 };
 
 const levelTwo: Level = {
@@ -52,7 +53,29 @@ const levelTwo: Level = {
       y: 120,
     },
   ],
-  platforms: parseSVGLevel(require('../assets/level-2.svg')),
+  ...parseSVGLevel(require('../assets/level-2.svg')),
 };
 
-export default [levelOne, levelTwo];
+const levelThree: Level = {
+  spawns: [
+    {
+      x: 160,
+      y: 400,
+    },
+    {
+      x: 266,
+      y: 400,
+    },
+    {
+      x: 373,
+      y: 400,
+    },
+    {
+      x: 480,
+      y: 400,
+    },
+  ],
+  ...parseSVGLevel(require('../assets/level-3.svg')),
+};
+
+export default [levelOne, levelTwo, levelThree];

@@ -36,7 +36,7 @@ export default class LevelLoader extends Component<void> {
   }
 
   private loadLevel(level: Level) {
-    const worldSize = this.pearl.renderer.getViewSize();
+    const worldSize = level.size;
 
     const walls: RectangleLevelShape[] = [
       {
