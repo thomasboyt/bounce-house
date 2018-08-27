@@ -10,7 +10,7 @@ export default class RainbowRenderer extends Component<void> {
   offset = 0;
 
   update(dt: number) {
-    this.offset += dt * 0.05;
+    // this.offset += dt * 0.05;
   }
 
   render(ctx: CanvasRenderingContext2D) {
@@ -25,28 +25,37 @@ export default class RainbowRenderer extends Component<void> {
     const phys = this.getComponent(Physical);
 
     const points = poly.getCollisionShape().points;
-    ctx.translate(phys.center.x, phys.center.y);
-    ctx.rotate(phys.angle);
 
-    const boundingBox = poly.getCollisionShape().getBoundingBox();
+    const boundingBox = poly.getBounds();
+    const rotatedBB = {
+      min: V.rotate({ x: boundingBox.xMin, y: boundingBox.yMin }, phys.angle),
+      max: V.rotate({ x: boundingBox.xMax, y: boundingBox.yMax }, phys.angle),
+    };
 
     const lineStroke = this.createRainbowLine(
       ctx,
-      boundingBox.xMin,
-      boundingBox.yMin,
-      boundingBox.xMax,
-      boundingBox.yMax
+      rotatedBB.min.x,
+      rotatedBB.min.y,
+      rotatedBB.max.x,
+      rotatedBB.max.y
     );
 
     ctx.strokeStyle = lineStroke;
+
+    ctx.save();
+
+    ctx.translate(phys.center.x, phys.center.y);
+    ctx.rotate(phys.angle);
 
     ctx.beginPath();
     ctx.moveTo(points[0][0], points[0][1]);
     for (let point of [...points.slice(1), points[0]]) {
       ctx.lineTo(point[0], point[1]);
     }
-    ctx.stroke();
     ctx.closePath();
+    ctx.restore();
+
+    ctx.stroke();
   }
 
   private createRainbowLine(
