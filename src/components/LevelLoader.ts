@@ -15,6 +15,7 @@ import parseSVGLevel, {
 } from '../parseSVGLevel';
 import { Tag } from '../types';
 import { Level } from '../levels';
+import RainbowRenderer from './RainbowRenderer';
 
 /**
  * Responsible for adding and removing platforms from the game world when the
@@ -75,9 +76,7 @@ export default class LevelLoader extends Component<void> {
             angle: Maths.degreesToRadians(shape.angle || 0),
           }),
           new BoxCollider({ width: shape.size.x, height: shape.size.y }),
-          new BoxRenderer({
-            strokeStyle: 'white',
-          }),
+          new RainbowRenderer(),
         ],
       })
     );
@@ -96,9 +95,7 @@ export default class LevelLoader extends Component<void> {
           new PolygonCollider({
             points: shape.localPoints,
           }),
-          new BoxRenderer({
-            strokeStyle: 'white',
-          }),
+          new RainbowRenderer(),
         ],
       })
     );
