@@ -25,9 +25,10 @@ interface Snapshot {
 export default class PlayerThrow extends Component<void>
   implements NetworkedComponent<Snapshot> {
   private isThrowCharging = false;
-  private throwCharge = 0;
   private throwChargeCurrentMs = 0;
   private throwChargeMaxMs = 500;
+  private initialThrowCharge = 0.3;
+  private throwCharge = this.initialThrowCharge;
 
   update(dt: number) {
     if (!this.getComponent(NetworkedEntity).isHost) {
@@ -48,20 +49,24 @@ export default class PlayerThrow extends Component<void>
         this.throwChargeCurrentMs += dt;
         // continue charging
         this.throwCharge = clamp(
-          lerp(0.3, 1, this.throwChargeCurrentMs / this.throwChargeMaxMs),
+          lerp(
+            this.initialThrowCharge,
+            1,
+            this.throwChargeCurrentMs / this.throwChargeMaxMs
+          ),
           1
         );
       } else {
         // throw
         player.throwBall(this.getBallVector());
         this.isThrowCharging = false;
-        this.throwCharge = 0;
+        this.throwCharge = this.initialThrowCharge;
       }
     } else {
       if (throwKeyDown) {
         // start charging
         this.isThrowCharging = true;
-        this.throwCharge = 0;
+        this.throwCharge = this.initialThrowCharge;
         this.throwChargeCurrentMs = 0;
       }
     }
@@ -70,9 +75,8 @@ export default class PlayerThrow extends Component<void>
   private getBallVector(): Vector2 {
     const player = this.getComponent(Player);
 
-    // let direction = { x: 0, y: -1 };
     // so the initial angle is always straight out in facing direction:
-    const xDirection = player.vel.x > 0 ? 1 : -1;
+    const xDirection = player.facingX;
 
     // then, the angle of throw is based on your current y velocity. we want to
     // represent the "peak" of a jump here, so basically, rotated up the closer
