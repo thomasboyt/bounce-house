@@ -2,6 +2,7 @@ export enum Tag {
   Player = 'player',
   Platform = 'platform',
   Session = 'session',
+  Ball = 'ball',
 }
 
 export enum ZIndex {

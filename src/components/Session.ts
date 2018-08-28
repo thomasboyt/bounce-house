@@ -169,6 +169,15 @@ export default class Session extends Component<void> {
         this.playerSlotManager!.getSlotForPlayerId(playerId)
       );
     }
+
+    const ball = this.pearl.root
+      .getComponent(NetworkingHost)
+      .createNetworkedPrefab('ball');
+
+    ball.getComponent(Physical).center = {
+      x: this.currentLevel!.size.x / 2,
+      y: this.currentLevel!.size.y - 50,
+    };
   }
 
   private rpcLoadLevel(levelIdx: number) {

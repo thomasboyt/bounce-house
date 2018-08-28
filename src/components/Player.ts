@@ -8,12 +8,16 @@ import {
   VectorMaths as V,
   CollisionInformation,
   BoxRenderer,
+  CircleCollider,
+  Entity,
 } from 'pearl';
 import { NetworkedEntity, NetworkingHost } from 'pearl-networking';
 import TrailRenderer from './TrailRenderer';
 import { RGB, Tag } from '../types';
 import SpawningDyingRenderer from './SpawningDyingRenderer';
 import CameraMover from './CameraMover';
+import { Circle } from 'sat';
+import Ball from './Ball';
 
 // TODO: what to do with all these constants?
 const minimumBounce = 0.25;
@@ -34,6 +38,8 @@ interface Snapshot {
   color: RGB;
   slotPosition: number;
   id: string;
+  heldBallId?: string;
+  vel: Vector2;
 }
 
 export default class Player extends Component<void> {
@@ -45,6 +51,9 @@ export default class Player extends Component<void> {
   score = 0;
   isSlamming: boolean = false;
   slotPosition!: number;
+  heldBall?: Entity;
+  canCatch = true;
+  facingX = 1;
 
   init() {
     this.getComponent(TrailRenderer).trailColor = this.color;
@@ -63,21 +72,28 @@ export default class Player extends Component<void> {
     }
   }
 
+  getInputter() {
+    const host = this.getComponent(NetworkedEntity)
+      .networking as NetworkingHost;
+    const inputter = host.players.get(this.id!)!.inputter;
+    return inputter;
+  }
+
   private updateHost(dt: number) {
     if (this.state !== 'alive') {
       return;
     }
 
-    const host = this.getComponent(NetworkedEntity)
-      .networking as NetworkingHost;
-    const inputter = host.players.get(this.id!)!.inputter;
+    const inputter = this.getInputter();
 
     let xDirection = 0;
     if (inputter.isKeyDown(Keys.rightArrow)) {
       xDirection += 1;
+      this.facingX = 1;
     }
     if (inputter.isKeyDown(Keys.leftArrow)) {
       xDirection -= 1;
+      this.facingX = -1;
     }
     if (inputter.isKeyPressed(Keys.space)) {
       this.slam();
@@ -186,6 +202,10 @@ export default class Player extends Component<void> {
     this.vel = { x: 0, y: 0 };
     this.state = 'dead';
     this.rpcAnimateDie();
+
+    if (this.heldBall) {
+      this.detachBall();
+    }
   }
 
   private respawn() {
@@ -223,19 +243,72 @@ export default class Player extends Component<void> {
         collision.entity.getComponent(Player).score += 1;
         this.die();
       }
+    } else if (collision.entity.hasTag(Tag.Ball)) {
+      const ballHeld =
+        collision.entity.parent && collision.entity.parent.hasTag(Tag.Player);
+
+      if (ballHeld || !this.canCatch) {
+        return;
+      }
+
+      this.attachBall(collision.entity);
     }
   }
+
+  private attachBall(ball: Entity) {
+    this.entity.appendChild(ball);
+    ball.getComponent(Physical).localCenter = { x: 0, y: 0 };
+    ball.getComponent(CircleCollider).isTrigger = true;
+    this.heldBall = ball;
+  }
+
+  private detachBall() {
+    const ball = this.heldBall!;
+
+    const ballPhys = ball.getComponent(Physical);
+    ballPhys.localCenter = ballPhys.center;
+    ball.getComponent(CircleCollider).isTrigger = false;
+
+    this.entity.removeChild(this.heldBall!);
+    this.heldBall = undefined;
+  }
+
+  throwBall(ballVector: Vector2) {
+    // 1. ball x, y origin on throw is directly above head
+    // 2. ball should go in some x-direction, but i don't know what default is
+    //   - maybe sprite needs some kind of "facing" concept
+    //   - could actually show some sort of indicator above head while holding
+    //     down throw button
+    const ball = this.heldBall!;
+    this.detachBall();
+
+    ball.getComponent(Ball).vel = ballVector;
+
+    this.canCatch = false;
+    this.runCoroutine(function*(this: Player) {
+      yield this.pearl.async.waitMs(100);
+      this.canCatch = true;
+    });
+  }
+
   serialize(): Snapshot {
     return {
       color: this.color,
       slotPosition: this.slotPosition,
       id: this.id!,
+      heldBallId:
+        this.heldBall && this.heldBall.getComponent(NetworkedEntity).id,
+      vel: this.vel,
     };
   }
 
-  deserialize(snapshot: Snapshot) {
+  deserialize(snapshot: Snapshot, networkedEntities: Map<string, Entity>) {
     this.color = snapshot.color;
     this.slotPosition = snapshot.slotPosition;
     this.id = snapshot.id;
+    this.heldBall = snapshot.heldBallId
+      ? networkedEntities.get(snapshot.heldBallId)
+      : undefined;
+    this.vel = snapshot.vel;
   }
 }

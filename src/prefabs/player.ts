@@ -4,6 +4,7 @@ import Player from '../components/Player';
 import { Tag } from '../types';
 import TrailRenderer from '../components/TrailRenderer';
 import SpawningDyingRenderer from '../components/SpawningDyingRenderer';
+import PlayerThrow from '../components/PlayerThrow';
 
 const player: NetworkedPrefab = {
   type: 'player',
@@ -24,6 +25,7 @@ const player: NetworkedPrefab = {
       }),
       new KinematicBody(),
       new SpawningDyingRenderer(),
+      new PlayerThrow(),
     ];
   },
 };

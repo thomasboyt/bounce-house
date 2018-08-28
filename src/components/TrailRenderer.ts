@@ -18,7 +18,6 @@ export default class TrailRenderer extends Component<void> {
   private lastCenter!: Vector2;
 
   init() {
-    const box = this.getComponent(BoxCollider);
     this.lastCenter = this.getComponent(Physical).center;
   }
 
