@@ -1,24 +1,5 @@
 import { Component, VectorMaths as V, Vector2, Maths } from 'pearl';
-const { lerp } = Maths;
-
-// TODO: move this to  maths
-function clamp(number: number, upper: number): number;
-function clamp(number: number, lower: number, upper: number): number;
-function clamp(number: number, a: number, b?: number): number {
-  let upper, lower;
-  if (b !== undefined) {
-    lower = a;
-    upper = b;
-  } else {
-    upper = a;
-  }
-
-  number = number <= upper ? number : upper;
-  if (lower !== undefined) {
-    number = number >= lower ? number : lower;
-  }
-  return number;
-}
+const { lerp, clamp } = Maths;
 
 export default class CameraMover extends Component<void> {
   followCenter!: Vector2;

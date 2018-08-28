@@ -2,10 +2,10 @@ import {
   Component,
   AnimationManager,
   Physical,
-  Maths,
   VectorMaths as V,
   BoxCollider,
   BoxRenderer,
+  Maths,
 } from 'pearl';
 
 interface Pixel {
@@ -17,12 +17,6 @@ interface Pixel {
 
 const SPAWN_TIME_MS = 1000;
 const DIE_TIME_MS = 1000;
-
-function getRandomInt(min: number, max: number): number {
-  min = Math.ceil(min);
-  max = Math.floor(max);
-  return Math.floor(Math.random() * (max - min)) + min;
-}
 
 type RGBA = [number, number, number, number];
 function colorStyleToRGBA(color: string): RGBA {
@@ -80,7 +74,7 @@ export default class SpawningDyingRenderer extends Component<null> {
         };
 
         const angleFromCenter = Math.atan2(vector.y, vector.x);
-        const len = getRandomInt(15, 25);
+        const len = Maths.getRandomInt(15, 25);
         const startPoint = V.multiply(V.fromAngle(angleFromCenter), len);
         this._pixels.push({
           startX: startPoint.x,
