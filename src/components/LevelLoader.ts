@@ -51,6 +51,12 @@ export default class LevelLoader extends Component<void> {
         size: { x: 50, y: worldSize.y * 4 },
         angle: 0,
       },
+      {
+        type: 'rectangle',
+        center: { x: worldSize.x / 2, y: -25 },
+        size: { x: worldSize.x, y: 50 },
+        angle: 0,
+      },
     ];
 
     const platforms = [...level.platforms, ...walls];

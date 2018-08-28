@@ -1,16 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg width="320px" height="240px" viewBox="0 0 320 240" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<svg width="320px" height="320px" viewBox="0 0 320 320" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
     <!-- Generator: Sketch 43.2 (39069) - http://www.bohemiancoding.com/sketch -->
     <title>Level</title>
     <desc>Created with Sketch.</desc>
     <defs></defs>
     <g id="Page-1" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
         <g id="Level" stroke="#979797">
-            <rect id="Rectangle" transform="translate(130.000000, 160.000000) rotate(45.000000) translate(-130.000000, -160.000000) " x="100" y="150" width="60" height="20"></rect>
-            <rect id="Rectangle" transform="translate(130.000000, 80.000000) rotate(45.000000) translate(-130.000000, -80.000000) " x="100" y="70" width="60" height="20"></rect>
-            <rect id="Rectangle" transform="translate(210.000000, 120.000000) rotate(-45.000000) translate(-210.000000, -120.000000) " x="180" y="110" width="60" height="20"></rect>
-            <rect id="Rectangle" x="180" y="30" width="60" height="20"></rect>
-            <rect id="Rectangle-2" x="0" y="222" width="320" height="50"></rect>
+            <rect id="Rectangle" transform="translate(130.284271, 238.284271) rotate(45.000000) translate(-130.284271, -238.284271) " x="100.284271" y="228.284271" width="60" height="20"></rect>
+            <rect id="Rectangle" transform="translate(130.284271, 158.284271) rotate(45.000000) translate(-130.284271, -158.284271) " x="100.284271" y="148.284271" width="60" height="20"></rect>
+            <rect id="Rectangle" transform="translate(210.284271, 198.284271) rotate(-45.000000) translate(-210.284271, -198.284271) " x="180.284271" y="188.284271" width="60" height="20"></rect>
+            <rect id="Rectangle" x="180" y="108" width="60" height="20"></rect>
+            <rect id="Rectangle-2" x="0" y="302" width="320" height="50"></rect>
         </g>
     </g>
 </svg>
