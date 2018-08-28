@@ -155,9 +155,9 @@ export default class Session extends Component<void> {
   }
 
   private setLevel(levelIdx: number) {
-    const players = this.pearl.entities.all(Tag.Player);
-    for (let player of players) {
-      this.pearl.entities.destroy(player);
+    const spawnedEntities = this.pearl.entities.all(Tag.Ball, Tag.Player);
+    for (let entity of spawnedEntities) {
+      this.pearl.entities.destroy(entity);
     }
 
     this.rpcLoadLevel(levelIdx);

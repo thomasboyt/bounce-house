@@ -1,11 +1,6 @@
 import { Vector2 } from 'pearl';
 import parseSVGLevel, { LevelShape } from './parseSVGLevel';
 
-const levelSize = {
-  x: 320,
-  y: 240,
-};
-
 export interface Level {
   spawns: [Vector2, Vector2, Vector2, Vector2];
   platforms: LevelShape[];
